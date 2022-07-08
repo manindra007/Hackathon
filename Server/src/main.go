@@ -2,50 +2,74 @@ package main
 
 import (
 	"fmt"
+	alert "hackathon/server/src/Alert"
+	"hackathon/server/src/person"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-type EmergencyContact struct {
-	Phone string `json:"phone"`
-	Email string `json:"email"`
-}
-
-type Person struct {
-	Id               string             `gorm:"primary_key" json:"id"`
-	Email            string             `gorm:"unique" json:"email"`
-	Name             string             `json:"name"`
-	Address          string             `json:"address"`
-	Phone            string             `json:"phone"`
-	EmergencyContact []EmergencyContact `json:"ContactDetail"`
-}
-
 func registerUser(c *gin.Context) {
-	var input Person
+	var input person.Person
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if input.Email == "" {
+		c.JSON(http.StatusBadRequest, "Email field can't be nil")
+		return
+	}
+	for _, j := range person.Users {
+
+		if j.Email == input.Email {
+			c.JSON(http.StatusBadRequest, "User already exists!")
+			return
+		}
+	}
 	fmt.Println(input)
+
+	person.Users = append(person.Users, input)
+	fmt.Println(person.Users)
 	c.JSON(http.StatusOK, "Registered Succefully!")
 }
 
-func accident(c *gin.Context) {
-	var input Person
+type Email struct {
+	Email string `json:"email"`
+}
+
+func allert(c *gin.Context) {
+	fmt.Println("here")
+	var input Email
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	fmt.Println(input)
-	c.JSON(http.StatusOK, "accident happened Succefully!")
+
+	if resp := alert.SendAlert(input.Email); resp {
+		c.JSON(http.StatusOK, "Alert Send!")
+	} else {
+		c.JSON(http.StatusOK, "Alert aborted!")
+	}
+}
+
+func abort(c *gin.Context) {
+	fmt.Println("here")
+	var input Email
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	alert.AbortAlert(input.Email)
+	c.JSON(http.StatusOK, "Alert aborted!")
 }
 
 func main() {
 	router := gin.Default()
-	// router.GET("/albums", getAlbums)
 	router.POST("/register", registerUser)
-	router.POST("/accident", accident)
+	// router.POST("/updateUser", updateUser)
+	router.POST("/allert", allert)
+	router.POST("/abort", abort)
 
 	router.Run("localhost:8080")
 }
