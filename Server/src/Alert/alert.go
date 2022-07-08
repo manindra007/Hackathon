@@ -9,52 +9,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
-func SendAlert(email string) error {
-	//init chan
-	for _, j := range person.Users {
-
-		if j.Email == email {
-			fmt.Println(j)
-			sendEmailAllert(j.EmergencyContact[0].Email)
-		}
-	}
-	return fmt.Errorf("can't find person detail, person is not registered with us")
-}
-
-// cf45291ef134a27d9bf2f4ebb0b568eb
-// AC02ed0937bb6cd586beff558d0e3a6026
-// func sendWhatsappMessage(j person.Person) {
-// // time.Sleep(10 * time.Second)
-// from := os.Getenv("+912121212121")
-// to := os.Getenv("+918299661294")
-// fmt.Println("swm1")
-// client := twilio.NewRestClient()
-
-// params := &openapi.CreateMessageParams{}
-// params.SetTo(to)
-// params.SetFrom(from)
-// params.SetBody("Hello there")
-// fmt.Println("swm2")
-// resp, err := client.Api.CreateMessage(params)
-// if err != nil {
-// 	fmt.Println("swm2.err")
-// 	fmt.Println(err.Error())
-// } else {
-// 	fmt.Println("swm2.else")
-// 	response, _ := json.Marshal(*resp)
-// 	fmt.Println("Response: " + string(response))
-// }
-
-//wait for 15 sec
-//if abort quit
-//else send.
-// }
-
-func AbortAlert(u person.Person) {
-
-}
+var mp map[string]bool
 
 type email struct {
 	Tomail    string `json:"to_email"`
@@ -63,7 +21,41 @@ type email struct {
 	Message   string `json:"message"`
 }
 
-func sendEmailAllert(emailid string) {
+func SendAlert(email string) bool {
+	//init chan
+	resp := false
+	for _, j := range person.Users {
+
+		if j.Email == email {
+			fmt.Println(j)
+			resp = sendEmailAllert(j.EmergencyContact[0].Email)
+		}
+	}
+	return resp
+}
+
+func abortEmailAlert(u string) bool {
+	mp[u] = false
+	fmt.Println(mp)
+	return true
+}
+
+func AbortAlert(email string) bool {
+	//init chan
+	res := false
+	for _, j := range person.Users {
+
+		if j.Email == email {
+			fmt.Println(j)
+			abortEmailAlert(j.EmergencyContact[0].Email)
+			res = true
+		}
+	}
+	return res
+}
+
+func sendEmailAllert(emailid string) bool {
+
 	data := email{
 		Tomail:    emailid,
 		Fromemail: "admin@lazycoderz.com",
@@ -73,18 +65,33 @@ func sendEmailAllert(emailid string) {
 	dataenc, err := json.Marshal(data)
 	if err != nil {
 		fmt.Println("error occured", err.Error())
-		return
-	}
-	response, err := http.Post("http://lazycoderz.com/phpmailer.php", "application/json", bytes.NewBuffer(dataenc))
-
-	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
+		return false
 	}
 
-	responseData, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Fatal(err)
+	mp = make(map[string]bool)
+	mp[emailid] = true
+	fmt.Println(mp)
+	time.Sleep(5 * time.Second)
+	var response *http.Response
+	var resp bool
+	if v := mp[emailid]; v {
+		fmt.Println("send email")
+		response, err = http.Post("http://lazycoderz.com/phpmailer.php", "application/json", bytes.NewBuffer(dataenc))
+		if err != nil {
+			fmt.Print(err.Error())
+			os.Exit(1)
+		}
+		responseData, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(string(responseData))
+		resp = true
+	} else {
+		fmt.Println("Aborted send email")
+		resp = false
 	}
-	fmt.Println(string(responseData))
+	delete(mp, emailid)
+
+	return resp
 }

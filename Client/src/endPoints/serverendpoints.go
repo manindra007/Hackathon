@@ -59,14 +59,15 @@ func SendAllert(email string) {
 	fmt.Println(string(responseData))
 }
 
-func UpdateContacts(data user.User) {
-	fmt.Println(data)
-	dataenc, err := json.Marshal(data)
+func Abort(email string) {
+	dataenc, err := json.Marshal(Email{
+		Email: email,
+	})
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	response, err := http.Post("http://localhost:8080/register", "application/json", bytes.NewBuffer(dataenc))
+	response, err := http.Post("http://localhost:8080/abort", "application/json", bytes.NewBuffer(dataenc))
 
 	if err != nil {
 		fmt.Print(err.Error())
