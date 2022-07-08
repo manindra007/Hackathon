@@ -13,3 +13,10 @@ type Person struct {
 	Phone            string             `json:"phone"`
 	EmergencyContact []EmergencyContact `json:"ContactDetail"`
 }
+type PersonContact struct {
+	IdEmail string `gorm:"unique" json:"idemail"`
+	Phone   string `json:"phone"`
+	Email   string `json:"email"`
+}
+
+var Users []Person
