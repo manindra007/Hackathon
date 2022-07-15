@@ -76,6 +76,7 @@ func sendEmailAllert(emailid string) bool {
 	var resp bool
 	if v := mp[emailid]; v {
 		fmt.Println("send email")
+
 		response, err = http.Post("http://lazycoderz.com/phpmailer.php", "application/json", bytes.NewBuffer(dataenc))
 		if err != nil {
 			fmt.Print(err.Error())

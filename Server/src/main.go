@@ -7,8 +7,22 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	docs "github.com/go-project-name/docs"
+	swaggerFile "github.com/swaggo/files"
+	ginswagger "github.com/swaggo/gin-swagger"
 )
 
+// @BasePath /api/v1
+
+// PingExample godoc
+// @Summary ping example
+// @Schemes
+// @Description do ping
+// @Tags example
+// @Accept json
+// @Produce json
+// @Success 200 {string} Helloworld
+// @Router /example/helloworld [get]
 func registerUser(c *gin.Context) {
 	var input person.Person
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -67,9 +81,14 @@ func abort(c *gin.Context) {
 func main() {
 	router := gin.Default()
 	router.POST("/register", registerUser)
+	docs.SwaggerInfo.BasePath = "/api/v1"
 	// router.POST("/updateUser", updateUser)
 	router.POST("/allert", allert)
 	router.POST("/abort", abort)
-
+	r := gin.New()
+	v1 := r.Group("/aaaa/kdjfd")
+	v1.Group("/akdjf")
+	r.GET("/swagger/*any", ginswagger.WrapHandler(swaggerFile.Handler))
+	// router.GET("/swagger/*any", ginswagger.WrapHandler(swaggerFiles.Handler))
 	router.Run("localhost:8080")
 }
